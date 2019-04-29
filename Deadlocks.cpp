@@ -8,14 +8,7 @@ struct process{
 	vector<int> holdResources;
 	vector<int> needResources;
 	bool processCompleted = false;
-	bool processCanGoFirst = false;
 };
-
-//Deadlock prevention method of choice
-//idk what it should return tbh ill set it to void for now
-void deadlockMethod(){
-    cout << "fuck this" << endl;
-}
 
 bool processCanGetResources(process procs, int numResources, int totalResAvailable, int arrResAvailable[]){
 	bool processWillGo = true;
@@ -55,34 +48,37 @@ int totalResourcesAvailable(int arrResAvailable[], int numResources){
 	return totalResAvailable;
 }
 
-/*void processCanGoFirstCheck(process[] procs, int procsSize, int totalResAvailable, int totalResNeeded){
-	for(int i = 0; i < procsSize; i++){
-		totalResNeeded = totalResourcesNeeded(procs[i], numResources);
-		if(totalResNeeded <= totalResAvailable){
-			procs[i].processCanGoFirst = true;
-		}
+//Deadlock avoidance
+void deadlockMethod(process procs[], int totalResAvailable, int numProcess, int numResources, int arrResAvailable[]){
+	int totalResNeeded, totalResHeld;
+
+	//get process with max held resources to release all
+	//call the orderOfProcess function again
+	for(int i = 0; i < numProcess; i++){
+
 	}
-}*/
+	//totalResHeld = totalResourcesHeld(procs[], numResources);
+
+    cout << "Deadlock problem solved!" << endl;
+}
 
 //Arithmethic part to find out if deadlock or not
 int orderOfProcess(process procs[], int totalResAvailable, int numProcess, int numResources, int arrResAvailable[]){
-	int totalResNeeded, totalResHeld, originalResAvailable;
+	int totalResNeeded, totalResHeld;
 	int counter = 0;
-	int falseCounter = 0;
+	int roundCounter = 0;
 	int allDone = 0;
-	
-	//totalResAvailable = totalResourcesAvailable(arrResAvailable, numResources);
-	originalResAvailable = totalResAvailable; 
 
 	totalResNeeded = totalResourcesNeeded(procs[counter], numResources);
 	totalResHeld = totalResourcesHeld(procs[counter], numResources);
-	
-	//Will determine which of the processes have a totalResNeeded lower than the totalResAvailable
-	//processCanGoFirstCheck(procs, procsSize, totalResAvailable, totalResNeeded);
+
+	cout << "The order is: ";
 
 	while(allDone == 0){
+
 		//resets the counter
 		if(counter == numProcess){
+			roundCounter++;
 			counter = 0;
 		}
 		
@@ -95,9 +91,6 @@ int orderOfProcess(process procs[], int totalResAvailable, int numProcess, int n
 			totalResAvailable = totalResourcesAvailable(arrResAvailable, numResources);
 			//set process completed to true so it doesn't repeat
 			procs[counter].processCompleted = true;
-		}
-		else{
-			falseCounter++;
 		}
 
 		//update counter
@@ -115,8 +108,9 @@ int orderOfProcess(process procs[], int totalResAvailable, int numProcess, int n
 			cout << endl;
 		}
 
-		if(falseCounter == numProcess - 1){
+		if(roundCounter == numProcess - 1){
 			allDone = 2;
+			cout << "NA" << endl;
 			break;
 		}
 	}
@@ -175,10 +169,10 @@ int main(){
 		totalResAvailable = totalResourcesAvailable(arrResAvailable, numResources);
 		intBool = orderOfProcess(procs, totalResAvailable, numProcess, numResources, arrResAvailable);
     	if(intBool == 1){
-    		cout << "No deadlock avoidance needed.";
+    		cout << "No deadlock avoidance needed." << endl;
     	}
     	else{ //intBool == 2
-    		cout << "Deadlock avoidance needed";
+    		cout << "Deadlock avoidance needed" << endl;
     		deadlockMethod();
     	}
 
