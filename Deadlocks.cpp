@@ -8,6 +8,7 @@ struct process{
 	vector<int> holdResources;
 	vector<int> needResources;
 	bool processCompleted = false;
+	bool victim = false;
 };
 
 bool processCanGetResources(process procs, int numResources, int totalResAvailable, int arrResAvailable[]){
@@ -48,20 +49,6 @@ int totalResourcesAvailable(int arrResAvailable[], int numResources){
 	return totalResAvailable;
 }
 
-//Deadlock avoidance
-void deadlockMethod(process procs[], int totalResAvailable, int numProcess, int numResources, int arrResAvailable[]){
-	int totalResNeeded, totalResHeld;
-
-	//get process with max held resources to release all
-	//call the orderOfProcess function again
-	for(int i = 0; i < numProcess; i++){
-
-	}
-	//totalResHeld = totalResourcesHeld(procs[], numResources);
-
-    cout << "Deadlock problem solved!" << endl;
-}
-
 //Arithmethic part to find out if deadlock or not
 int orderOfProcess(process procs[], int totalResAvailable, int numProcess, int numResources, int arrResAvailable[]){
 	int totalResNeeded, totalResHeld;
@@ -70,9 +57,8 @@ int orderOfProcess(process procs[], int totalResAvailable, int numProcess, int n
 	int allDone = 0;
 
 	totalResNeeded = totalResourcesNeeded(procs[counter], numResources);
-	totalResHeld = totalResourcesHeld(procs[counter], numResources);
 
-	cout << "The order is: ";
+	cout << "The processes completed so far: ";
 
 	while(allDone == 0){
 
@@ -82,7 +68,7 @@ int orderOfProcess(process procs[], int totalResAvailable, int numProcess, int n
 			counter = 0;
 		}
 		
-		if(processCanGetResources(procs[counter], numResources, totalResAvailable, arrResAvailable) && !procs[counter].processCompleted){ //if true then process can get res
+		if(processCanGetResources(procs[counter], numResources, totalResAvailable, arrResAvailable) && !procs[counter].processCompleted && !procs[counter].victim){ //if true then process can get res
 			cout << counter + 1 << " ";
 			//update available resource count as if the process has released its resources
 			for(int i = 0; i < numResources; i++){
@@ -110,7 +96,7 @@ int orderOfProcess(process procs[], int totalResAvailable, int numProcess, int n
 
 		if(roundCounter == numProcess - 1){
 			allDone = 2;
-			cout << "NA" << endl;
+			cout << endl;
 			break;
 		}
 	}
@@ -118,8 +104,51 @@ int orderOfProcess(process procs[], int totalResAvailable, int numProcess, int n
     return allDone;
 }
 
+//Deadlock Recovery
+void deadlockMethod(process procs[], int totalResAvailable, int numProcess, int numResources, int arrResAvailable[]){
+	int totalResNeeded, totalResHeld, tempResHeld, victimNumber;
+	string victim = "NA";
+	
+	//Make a temporary array to store the highest resources available
+	int temp[numResources];
+	for(int h = 0; h < numResources; h++){
+		temp[h] = 0;
+	}
+	tempResHeld = totalResourcesAvailable(temp,numResources);
+	
+	//For loop to know the process with the highest resources available and put it into temp[]
+	for(int i = 0; i < numProcess; i++){
+		if(!procs[i].processCompleted){
+			totalResHeld = totalResourcesHeld(procs[i], numResources);
+			if(totalResHeld > tempResHeld){
+				for(int j = 0; j < numResources; j++){
+					temp[j] = procs[i].holdResources.at(j);
+					procs[i].victim = true;
+					victimNumber = i;
+					victim = to_string(i+1);
+				}
+				tempResHeld = totalResourcesAvailable(temp,numResources);
+			}
+		}
+	}
+	
+	//Add the released resources to the available
+	for(int k = 0; k < numResources; k++){
+		arrResAvailable[k] += temp[k];
+	}
+	
+	//Since we released the resoures the held resources of that process is 0
+	for(int k = 0; k < numResources; k++){
+		procs[victimNumber].holdResources.at(k) = 0;
+	}
+	totalResAvailable = totalResourcesAvailable(arrResAvailable, numResources);
+	
+	cout << "Process " << victim << " resources are released." << endl;
+}
+
 int main(){
 	int numTestCase, numProcess, numResources, totalResAvailable, intBool;
+	bool deadlockHappened = false;
 	
 	cin >> numTestCase;
 	
@@ -143,12 +172,6 @@ int main(){
 				cin >> num;
 				procs[j].holdResources.push_back(num);
 			}
-			/* THIS IS JUST FOR TESTING WHAT IS INSIDE THE VECTOR!!!
-			for(int l = 0; l < numResources; l++){
-				cout << procs[j].holdResources.front() << endl;
-				procs[j].holdResources.erase(procs[j].holdResources.begin());
-			}
-			*/
 		}
 		
 		//Puts what the processes needs
@@ -158,24 +181,27 @@ int main(){
 				cin >> num;
 				procs[l].needResources.push_back(num);
 			}
-			/* THIS IS JUST FOR TESTING WHAT IS INSIDE THE VECTOR!!!
-			for(int l = 0; l < numResources; l++){
-				cout << procs[j].needResources.front() << endl;
-				procs[j].needResources.erase(procs[j].needResources.begin());
-			}
-			*/
 		}
 		
 		totalResAvailable = totalResourcesAvailable(arrResAvailable, numResources);
 		intBool = orderOfProcess(procs, totalResAvailable, numProcess, numResources, arrResAvailable);
-    	if(intBool == 1){
-    		cout << "No deadlock avoidance needed." << endl;
+		while(intBool != 1){
+			if(deadlockHappened == false){
+				cout << "Deadlock Recovery in Progress..." << endl;
+			}
+    		deadlockMethod(procs, totalResAvailable, numProcess, numResources, arrResAvailable);
+			intBool = orderOfProcess(procs, totalResAvailable, numProcess, numResources, arrResAvailable);
+			deadlockHappened = true;
+			for(int i = 0; i < numProcess; i++){
+				procs[i].victim = false;
+			}
+		}
+    	if(intBool == 1 && deadlockHappened == false){
+    		cout << "No Deadlock Recovery Needed." << endl;
     	}
-    	else{ //intBool == 2
-    		cout << "Deadlock avoidance needed" << endl;
-    		deadlockMethod();
-    	}
-
+		else{
+			cout << "Deadlock Resolved!" << endl;
+		}
 	}
 	
 	
